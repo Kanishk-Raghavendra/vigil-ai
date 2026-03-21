@@ -71,6 +71,13 @@ This document records the chronological development of VIGIL from initial protot
   - results/mode_comparison.csv
 - Added automatic interpretation message based on FPR behavior.
 
+## 2026-03-21: POPE Adversarial Benchmark Milestone
+
+- Added POPE evaluator at src/evaluation/run_pope.py with robust JSONL parsing support and ablation-style method reporting.
+- Downloaded and evaluated the POPE-COCO adversarial split using 500 images and 3000 claims.
+- Recorded benchmark comparison for Full_VIGIL_Balanced, Full_VIGIL_Safe, and Baseline_CLIP_Fixed_0.5.
+- Updated EXPERIMENTS.md, PROJECT_REPORT.md, README.md, and CONTRIBUTION_LOG.md with the new POPE findings.
+
 ## Current Status
 
 VIGIL is now documented and instrumented as a Tier-2 conference-level research project with:

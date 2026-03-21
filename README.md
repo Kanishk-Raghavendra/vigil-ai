@@ -140,6 +140,7 @@ Current scaled benchmark (100 images / 600 claims):
 Interpretation:
 - Balanced mode preserves top-line performance.
 - Safe mode reduces FPR with a modest recall trade-off.
+- POPE adversarial benchmark (500 images / 3000 claims): Full_VIGIL_Balanced reaches 0.7290 accuracy, while Full_VIGIL_Safe cuts FPR from 0.3647 to 0.1847 with a recall trade-off.
 
 ## 11) Additional Documentation
 

@@ -213,5 +213,8 @@ results/
 # Local datasets and generated annotations
 data/
 
+# Explicitly ignore downloaded POPE benchmark images
+data/pope/images_adversarial/
+
 # OS-specific files
 .DS_Store

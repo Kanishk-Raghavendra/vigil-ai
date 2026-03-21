@@ -78,6 +78,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run both balanced and safe aggregation modes and save comparison outputs",
     )
+    parser.add_argument(
+        "--include-vqa-baseline",
+        action="store_true",
+        help="Include Baseline_VQA_Direct using BLIP-VQA yes/no probing",
+    )
     return parser.parse_args()
 
 
@@ -183,6 +188,7 @@ def run_methods(
     fixed_threshold: float,
     seed: int,
     aggregation_mode: str,
+    include_vqa_baseline: bool = False,
 ) -> Tuple[Dict[str, List[int]], Dict[str, Dict[str, float]]]:
     """Run ablation variants and baselines, returning predictions and metrics."""
     labels = [row["label"] for row in rows]
@@ -211,6 +217,15 @@ def run_methods(
     methods_predictions["C_Prompt_Adaptive"] = pred_c
 
     # D) Full VIGIL: prompt + adaptive + soft multi-claim aggregation.
+    #
+    # Why previous collapse happened:
+    # The old logic only changed predictions for a narrow "high-deficit" corner
+    # case. In most images, that condition never triggered, so D ~= C.
+    #
+    # New behavior:
+    # Use global trust score + trusted ratio + mixedness to modulate claim-level
+    # threshold for each image. Mixed images (valid + hallucinated claims) get
+    # stronger adjustments, which is where aggregation should matter most.
     pred_d: List[int] = []
     for image_name, image_rows in grouped.items():
         threshold = image_thresholds[image_name]
@@ -222,24 +237,33 @@ def run_methods(
         global_trust = Decision.compute_global_trust(interim, mode=aggregation_mode)
         global_threshold = float(global_trust["threshold"])
         global_score = float(global_trust["global_score"])
-        global_decision = global_trust["final_decision"]
+        trusted_ratio = float(global_trust["trusted_ratio"])
+
         confidence_deficit = global_threshold - global_score
 
+        # Mixedness is highest when trusted_ratio is near 0.5.
+        mixedness = 1.0 - abs((2.0 * trusted_ratio) - 1.0)
+        mode_strength = 1.0 if aggregation_mode == "balanced" else 1.35
+
+        # Conservative aggregation-guided threshold adjustment.
+        # - For uncertain images (deficit > 0), tighten threshold modestly.
+        # - For highly confident images (deficit << 0), allow slight relaxation.
+        # - Mixed images receive stronger effect than homogeneous ones.
+        adjustment = 0.0
+        if confidence_deficit > 0:
+            bounded_deficit = min(0.2, confidence_deficit)
+            adjustment += (
+                0.22 * bounded_deficit * (0.4 + 0.6 * mixedness) * mode_strength
+            )
+            if trusted_ratio < 0.5:
+                adjustment += 0.04 * (0.5 - trusted_ratio) * mode_strength
+        elif confidence_deficit < -0.08 and trusted_ratio > 0.7:
+            adjustment -= 0.03 * (trusted_ratio - 0.7)
+
         for row in image_rows:
-            base_pred = 1 if row["prompt_score"] >= threshold else 0
-
-            # Only tighten positive predictions when global confidence is low.
-            # This avoids rigid image-level overrides that can hurt recall.
-            if (
-                global_decision == "UNTRUSTED OUTPUT"
-                and base_pred == 1
-                and confidence_deficit >= 0.08
-            ):
-                calibrated_cutoff = max(threshold, global_threshold)
-                if row["prompt_score"] < calibrated_cutoff:
-                    base_pred = 0
-
-            pred_d.append(base_pred)
+            calibrated_threshold = threshold + adjustment
+            calibrated_threshold = max(0.2, min(0.9, calibrated_threshold))
+            pred_d.append(1 if row["prompt_score"] >= calibrated_threshold else 0)
     methods_predictions["D_Full_VIGIL"] = pred_d
 
     # Strong baselines.
@@ -251,6 +275,14 @@ def run_methods(
     methods_predictions["Baseline_CLIP_Fixed_0.5"] = [
         1 if row["raw_score"] >= fixed_threshold else 0 for row in rows
     ]
+
+    if include_vqa_baseline:
+        from src.models.verifier.blip_vqa import BLIPVQABaseline
+
+        vqa_model = BLIPVQABaseline()
+        methods_predictions["Baseline_VQA_Direct"] = [
+            vqa_model.predict_binary(row["image_path"], row["claim"]) for row in rows
+        ]
 
     metrics = {
         method: compute_binary_metrics(preds, labels)
@@ -468,6 +500,7 @@ def main() -> int:
             fixed_threshold=args.fixed_threshold,
             seed=args.seed,
             aggregation_mode=mode,
+            include_vqa_baseline=args.include_vqa_baseline,
         )
 
         fpr_before = method_metrics["C_Prompt_Adaptive"]["fpr"]
@@ -520,6 +553,7 @@ def main() -> int:
             "seed": args.seed,
             "aggregation_mode": args.aggregation_mode,
             "compare_modes": args.compare_modes,
+            "include_vqa_baseline": args.include_vqa_baseline,
         },
         "methods": method_metrics,
     }

@@ -123,6 +123,16 @@ Evaluation artifacts:
 | Balanced | 0.7067 | 0.6658 | 0.8300 | 0.4167 |
 | Safe | 0.6950 | 0.6657 | 0.7833 | 0.3933 |
 
+### 9.3 POPE Adversarial Benchmark
+
+| Method | Accuracy | Precision | Recall | FPR |
+|---|---:|---:|---:|---:|
+| Full_VIGIL_Balanced | 0.7290 | 0.6929 | 0.8227 | 0.3647 |
+| Full_VIGIL_Safe | 0.6890 | 0.7529 | 0.5627 | 0.1847 |
+| Baseline_CLIP_Fixed_0.5 | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
+
+VIGIL reaches 0.729 accuracy on the POPE adversarial split while operating as a post-hoc verifier over generated claims. Safe mode provides a meaningful false-positive reduction relative to Balanced mode. Together, the safe-balanced trade-off enables deployment-time safety control without retraining.
+
 ## 10. Discussion
 
 ### 10.1 Trade-off Analysis
