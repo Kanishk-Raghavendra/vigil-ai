@@ -6,6 +6,26 @@ VIGIL is a research-grade verification layer for vision-language systems. It is 
 
 The framework targets hallucination reduction in image-to-text outputs and provides structured explanations, calibrated confidence, and safety-aware aggregation.
 
+## Key Results
+
+Custom benchmark (100 images / 600 claims):
+
+| Method | Accuracy | Precision | Recall | FPR |
+|---|---:|---:|---:|---:|
+| Prompt + Adaptive | 0.7067 | 0.6658 | 0.8300 | 0.4167 |
+| Full VIGIL (Balanced) | 0.7033 | 0.6723 | 0.7933 | 0.3867 |
+| Full VIGIL (Safe) | 0.6567 | 0.6621 | 0.6400 | 0.3267 |
+
+POPE-COCO adversarial (500 images / 3000 claims):
+
+| Method | Accuracy | Precision | Recall | FPR |
+|---|---:|---:|---:|---:|
+| Full_VIGIL_Balanced | 0.7290 | 0.6929 | 0.8227 | 0.3647 |
+| Full_VIGIL_Safe | 0.6890 | 0.7529 | 0.5627 | 0.1847 |
+| Baseline_CLIP_Fixed | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
+
+Safe mode reduces FPR to 18.5% on adversarial data with a controllable recall trade-off.
+
 ## 2) Problem Statement
 
 Modern vision-language models can produce fluent but unsupported statements. These hallucinations are risky in high-stakes contexts (education, healthcare, accessibility, and automated decision support).
@@ -134,12 +154,12 @@ Current scaled benchmark (100 images / 600 claims):
 | Method | Accuracy | Precision | Recall | FPR |
 |---|---:|---:|---:|---:|
 | Prompt + Adaptive | 0.7067 | 0.6658 | 0.8300 | 0.4167 |
-| Full VIGIL (Balanced) | 0.7067 | 0.6658 | 0.8300 | 0.4167 |
-| Full VIGIL (Safe) | 0.6950 | 0.6657 | 0.7833 | 0.3933 |
+| Full VIGIL (Balanced) | 0.7033 | 0.6723 | 0.7933 | 0.3867 |
+| Full VIGIL (Safe) | 0.6567 | 0.6621 | 0.6400 | 0.3267 |
 
 Interpretation:
-- Balanced mode preserves top-line performance.
-- Safe mode reduces FPR with a modest recall trade-off.
+- Balanced mode reduces FPR versus adaptive-only verification while maintaining comparable accuracy.
+- Safe mode further reduces FPR at a stronger recall trade-off.
 - POPE adversarial benchmark (500 images / 3000 claims): Full_VIGIL_Balanced reaches 0.7290 accuracy, while Full_VIGIL_Safe cuts FPR from 0.3647 to 0.1847 with a recall trade-off.
 
 ## 11) Additional Documentation

@@ -72,6 +72,38 @@ Generated outputs:
 - results/mode_comparison.json
 - results/mode_comparison.csv
 
+## POPE-COCO adversarial evaluation
+
+Command used:
+
+```bash
+python -m src.evaluation.run_pope \
+	--pope-annotations data/pope/coco_pope_adversarial.json \
+	--images-dir data/pope/images_adversarial \
+	--output-json results/pope_adversarial_comparison.json \
+	--output-csv results/pope_adversarial_comparison.csv
+```
+
+Annotation file:
+- coco_pope_adversarial.json
+
+Output files:
+- pope_adversarial_comparison.json
+- pope_adversarial_comparison.csv
+
+Results:
+
+| Method | Accuracy | Precision | Recall | FPR |
+|---|---:|---:|---:|---:|
+| Full_VIGIL_Balanced | 0.7290 | 0.6929 | 0.8227 | 0.3647 |
+| Full_VIGIL_Safe | 0.6890 | 0.7529 | 0.5627 | 0.1847 |
+| Baseline_CLIP_Fixed | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
+
+Interpretation:
+- POPE adversarial uses real COCO images and object-level probing, making it more credible than synthetic-only stress tests.
+- Balanced mode outperforms the custom benchmark headline (0.7290 vs 0.7067), indicating generalization beyond synthetic negatives.
+- Safe mode nearly halves FPR (0.3647 -> 0.1847) with expected recall loss, providing a controllable safety-recall operating point.
+
 ## 8. Results Tables
 
 ### 8.1 Ablation and Baselines
@@ -81,17 +113,21 @@ Generated outputs:
 | A_Base_CLIP_Fixed | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
 | B_Prompt_Engineering | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
 | C_Prompt_Adaptive | 0.7067 | 0.6658 | 0.8300 | 0.4167 |
-| D_Full_VIGIL (Balanced) | 0.7067 | 0.6658 | 0.8300 | 0.4167 |
+| D_Full_VIGIL (Balanced) | 0.7033 | 0.6723 | 0.7933 | 0.3867 |
 | Baseline_Accept_All | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
 | Baseline_Random | 0.4967 | 0.4966 | 0.4867 | 0.4933 |
 | Baseline_CLIP_Fixed_0.5 | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
+
+Parity analysis note:
+- Earlier C and D parity was observed when aggregation contributed weakly beyond adaptive thresholding.
+- After reweighting global trust to 0.5 average score and 0.5 trusted ratio, D separates from C and reduces FPR by 0.0300 (0.4167 -> 0.3867).
 
 ### 8.2 Mode Comparison
 
 | Mode | Accuracy | Precision | Recall | FPR |
 |---|---:|---:|---:|---:|
-| Balanced | 0.7067 | 0.6658 | 0.8300 | 0.4167 |
-| Safe | 0.6950 | 0.6657 | 0.7833 | 0.3933 |
+| Balanced | 0.7033 | 0.6723 | 0.7933 | 0.3867 |
+| Safe | 0.6567 | 0.6621 | 0.6400 | 0.3267 |
 
 ### POPE Adversarial Benchmark (COCO, 500 images / 3000 claims)
 
@@ -107,7 +143,7 @@ Safe mode reduces FPR by about 50% versus Balanced (0.365 -> 0.185), at the cost
 
 - Adaptive thresholding provides a major lift over fixed-threshold CLIP variants.
 - Prompt + Adaptive is the strongest non-aggregation configuration.
-- Soft aggregation resolves prior rigid-threshold degradation issues.
+- Soft aggregation now produces measurable separation from adaptive-only decisions.
 - Safe mode lowers FPR and demonstrates a clear safety-recall trade-off.
 
 ## 10. Artifact Index

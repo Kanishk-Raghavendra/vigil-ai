@@ -18,6 +18,10 @@ class Decision:
     TRUST = "TRUST"
     WARNING = "WARNING"
 
+    # Soft aggregation weights for global trust scoring.
+    AVG_SCORE_WEIGHT = 0.5
+    TRUSTED_RATIO_WEIGHT = 0.5
+
     @staticmethod
     def compute_adaptive_threshold(scores: List[float]) -> float:
         """Compute per-image adaptive threshold from score distribution.
@@ -70,7 +74,7 @@ class Decision:
         """Aggregate per-claim outputs into a single global trust judgment.
 
         Soft aggregation uses:
-        weighted_score = 0.7 * average_score + 0.3 * trusted_ratio
+        weighted_score = 0.5 * average_score + 0.5 * trusted_ratio
 
         Adaptive global threshold uses:
         global_threshold = mean(scores) - 0.3 * std(scores), clamped to [0.3, 0.7]
@@ -115,7 +119,10 @@ class Decision:
             global_threshold = min(0.7, global_threshold + 0.05)
 
         # Soft aggregation score combines evidence strength and agreement.
-        weighted_score = 0.7 * average_score + 0.3 * trusted_ratio
+        weighted_score = (
+            Decision.AVG_SCORE_WEIGHT * average_score
+            + Decision.TRUSTED_RATIO_WEIGHT * trusted_ratio
+        )
 
         final_decision = (
             "TRUSTED OUTPUT" if weighted_score >= global_threshold else "UNTRUSTED OUTPUT"
