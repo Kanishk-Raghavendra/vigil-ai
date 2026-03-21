@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# VIGIL project artifacts
+# Generated experiment outputs and local caches
+results/
+
+# Local datasets and generated annotations
+data/
+
+# OS-specific files
+.DS_Store

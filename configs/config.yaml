@@ -1,0 +1,44 @@
+# Model Configuration
+models:
+  caption:
+    name: "blip"
+    variant: "blip-image-captioning-base"
+    source: "Salesforce"
+  
+  verifier:
+    name: "clip"
+    variant: "ViT-B/32"
+    source: "OpenAI"
+
+# Pipeline Configuration
+pipeline:
+  threshold: 0.25
+  cache_intermediates: true
+  cache_dir: "./results/cache"
+
+# Device Configuration
+device:
+  use_gpu: true
+  gpu_device: 0
+
+# Dataset Paths
+data:
+  sample_images_dir: "./data/sample_images"
+  results_dir: "./results"
+  logs_dir: "./results/logs"
+  metrics_dir: "./results/metrics"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  log_file: "./results/logs/vigil.log"
+
+# Evaluation Configuration
+evaluation:
+  benchmark_dataset: "coco_subset"
+  metrics_to_compute:
+    - accuracy
+    - precision
+    - recall
+    - fpr
+    - f1_score
