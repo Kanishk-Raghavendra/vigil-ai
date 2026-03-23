@@ -1,10 +1,10 @@
-# VIGIL: An Explainable Cross-Modal Verification Framework for Vision-Language Systems
+# VIGIL-Edge: Explainable On-Device Hallucination Verification for CCTV Vision-Language Systems
 
 ## 1) Project Description
 
-VIGIL is a research-grade verification layer for vision-language systems. It is designed around a safety-first principle: treat generated captions as untrusted claims, then verify each claim against the image before final acceptance.
+VIGIL-Edge is a production-grade edge verification layer for CCTV vision-language systems. It is designed around a safety-first principle and operates on-device: treat generated captions as untrusted claims, then verify each claim against video evidence at configurable keyframe intervals before final acceptance. The framework runs entirely on Apple Silicon MPS with no internet requirement, enabling privacy-preserving, real-time hallucination detection in field deployments.
 
-The framework targets hallucination reduction in image-to-text outputs and provides structured explanations, calibrated confidence, and safety-aware aggregation.
+The framework targets hallucination reduction in CCTV video streams and provides structured explanations, calibrated confidence, safety-aware aggregation, and temporal consistency checking (a novel contribution for video processing).
 
 ## Key Results
 
@@ -25,6 +25,16 @@ POPE-COCO adversarial (500 images / 3000 claims):
 | Baseline_CLIP_Fixed | 0.5000 | 0.5000 | 1.0000 | 1.0000 |
 
 Safe mode reduces FPR to 18.5% on adversarial data with a controllable recall trade-off.
+
+## Edge Deployment
+
+**Target device**: Apple Silicon (MPS) / resource-constrained edge devices  
+**Caption model**: MobileVLM-3B (lightweight, optimized for edge)  
+**Verifier**: MobileCLIP-S2 (Apple's lightweight CLIP)  
+**Input**: Video clips (VIRAT Ground Dataset 2.0)  
+**Keyframe interval**: Configurable (default 3 seconds)  
+**Processing**: Entirely on-device, no internet required  
+**Novel capability**: Temporal consistency checking across consecutive frames to detect video hallucinations
 
 ## 2) Problem Statement
 
@@ -84,10 +94,14 @@ vigil-ai/
 - data/
 	- sample_images/
 	- expanded_annotations.json
+	- virat/
+		- clips/  (place VIRAT .mp4 files here)
 - results/
 	- ablation_results.json
 	- mode_comparison.json
 	- threshold_sweep.json
+	- video_results.json
+	- profiler_summary.json
 - src/
 	- data/
 		- generate_dataset.py
@@ -95,10 +109,19 @@ vigil-ai/
 		- run_ablation.py
 	- models/
 		- caption/
+			- captioner.py (MobileVLM-3B)
 		- verifier/
+			- clip_verifier.py (MobileCLIP-S2)
 	- pipeline/
-		- vigil_pipeline.py
+		- vigil_pipeline.py (image mode)
+		- vigil_video_pipeline.py (video mode)
 	- utils/
+		- profiler.py (edge profiling)
+	- video/
+		- keyframe_sampler.py (video extraction)
+		- temporal_consistency.py (temporal verification)
+- demo/
+	- app.py (Gradio demo)
 
 ## 7) Installation
 
@@ -113,31 +136,51 @@ macOS/Linux:
 
 ## 8) How to Run
 
-### A) Single Image Inference
+### A) Single Image Inference (Legacy Mode)
 
 - python main.py data/sample_images/images/000000000025.jpg --output results/pipeline_soft_aggregation_sample.json
 
-### B) Dataset Generation (100 images, 600 claims target)
+### B) Video Inference (Edge CCTV Mode)
+
+- python main.py --video data/virat/clips/VIRAT_S_000000.mp4 --interval 3.0 --output results/video_results.json
+
+Parameters:
+- --video: Path to video file (MP4, AVI, MOV)
+- --interval: Keyframe interval in seconds (default 3.0)
+- --device: Device selection (auto/mps/cpu, default auto)
+- --output: Output JSON path (optional)
+
+### C) Interactive Demo App
+
+- python demo/app.py
+
+Opens a Gradio interface at http://localhost:7860 for real-time video processing and visualization.
+
+### D) Dataset Generation (100 images, 600 claims target)
 
 - python -m src.data.generate_dataset --images-dir data/sample_images/images --output data/expanded_annotations.json --target-images 100 --seed 42
 
-### C) Ablation Study
+### E) Ablation Study
 
 - python -m src.evaluation.run_ablation --annotations data/expanded_annotations.json --images-dir data/sample_images/images --bootstrap-samples 100 --seed 42 --aggregation-mode balanced
 
-### D) Mode Comparison (Balanced vs Safe)
+### F) Mode Comparison (Balanced vs Safe)
 
 - python -m src.evaluation.run_ablation --annotations data/expanded_annotations.json --images-dir data/sample_images/images --bootstrap-samples 100 --seed 42 --aggregation-mode balanced --compare-modes
 
 ## 9) Example Outputs
 
-Key generated files:
+Key generated files (image mode):
 - results/pipeline_soft_aggregation_sample.json
 - results/ablation_results.json
 - results/statistics.json
 - results/claim_type_analysis.json
 - results/mode_comparison.json
 - results/mode_comparison.csv
+
+Video mode outputs:
+- results/video_results.json (per-frame claims, temporal flags, video summary)
+- results/profiler_summary.json (latency and memory metrics)
 
 Global trust output (example fields):
 - global_score

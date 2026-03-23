@@ -59,6 +59,48 @@ These cover naive optimistic, random, and fixed-threshold verifier behaviors.
 Command:
 - python -m src.evaluate_annotations --annotations data/sample_images/annotations.json --images-dir data/sample_images/images --limit 5 --threshold 0.6 --output results/metrics/benchmark_5_images.json --sweep-json results/threshold_sweep.json --sweep-csv results/threshold_sweep.csv --failure-output results/failure_cases.json
 
+## 7. Edge Video Pipeline Experiments
+
+### Dataset
+
+VIRAT Ground Dataset 2.0 (users should place video clips in data/virat/clips/ directory)
+
+### Setup
+
+- Device: Apple Silicon MPS (MacBook Pro)
+- Pipeline: MobileVLM-3B + MobileCLIP-S2 + temporal consistency checker
+- Keyframe interval: 3.0 seconds (configurable)
+- Max frames per video: 50
+
+### Metrics to Collect
+
+- Per-frame latency (ms) per pipeline stage:
+  - Keyframe sampling
+  - MobileVLM caption generation
+  - Claim extraction
+  - MobileCLIP verification
+  - Adaptive threshold + aggregation
+  - Temporal consistency check
+- Peak memory usage (MB)
+- Temporal inconsistency rate across video
+- Global trust score distribution across frames
+- Frames where temporal checks caught hallucinations
+
+### Run Command
+
+```bash
+python main.py --video data/virat/clips/VIRAT_S_000000.mp4 \
+  --interval 3.0 \
+  --output results/video_results.json
+```
+
+### Notes
+
+- Results will be populated after hardware profiling runs on actual Apple Silicon MPS
+- Target throughput: <500ms per frame for real-time CCTV processing
+- Temporal consistency adds minimal overhead (~10-20ms per frame expected)
+- Memory target: <2GB peak for continuous streaming
+
 Sweep behavior:
 - threshold range from 0.10 to 0.90 with fixed increments.
 - outputs include accuracy, precision, recall, FPR, and hallucination detection rate.

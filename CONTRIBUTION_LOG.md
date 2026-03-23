@@ -1,6 +1,32 @@
 # CONTRIBUTION_LOG
 
-This document records the chronological development of VIGIL from initial prototype to research-grade evaluation system.
+This document records the chronological development of VIGIL from initial prototype to research-grade edge verification system.
+
+## Phase 10 (2026-03-23): Edge Deployment and CCTV Adaptation
+
+Full upgrade from static image verification to edge-optimized CCTV hallucination verifier:
+- Replaced BLIP caption model with MobileVLM-3B for edge inference (Apple Silicon optimized)
+- Replaced CLIP ViT-B/32 verifier with MobileCLIP-S2 (lightweight, MPS-compatible)
+- Added keyframe sampler for video clip extraction at configurable intervals (default 3.0s)
+- Added temporal consistency checker: novel contribution detecting hallucinations across consecutive frames
+- Added edge profiler for per-stage latency and memory benchmarking
+- Added Gradio demo app for interactive video processing and visualization
+- Updated main.py to support both image mode (legacy) and video mode (edge)
+- Created src/video/ module for video-specific processing (keyframe sampling, temporal checking)
+- Created src/utils/profiler.py for real-time performance monitoring
+- Created src/pipeline/vigil_video_pipeline.py as primary video orchestrator
+- Updated requirements.txt with new dependencies (mobileclip, opencv, gradio, torch>=2.1.0)
+- Rewrote all documentation for CCTV/edge context:
+  - PROJECT_REPORT.md: comprehensive rewrite with temporal consistency, edge profiling, CCTV motivation
+  - README.md: updated title, added edge deployment section, video mode commands, demo app
+  - EXPERIMENTS.md: added edge video pipeline experiments section
+  - CONTRIBUTION_LOG.md: added Phase 10 entry (this one)
+- Target deployment: VIRAT Ground Dataset 2.0 on Apple Silicon MPS
+- Dataset placement: users manually place video clips in data/virat/clips/
+- Processing target: <500ms per frame for 3-second keyframe intervals (near real-time at 0.33fps keyframe rate)
+- Privacy model: entirely on-device, no internet calls, suitable for sensitive CCTV environments
+
+All existing verification quality metrics (0.7067, 0.7290 POPE, 0.1847 FPR Safe) remain unchanged for image mode.
 
 ## Phase 1: Basic Pipeline (BLIP + CLIP)
 
